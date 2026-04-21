@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thaimart Care - แจ้งปัญหา</title>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ตั้งค่า CI ของ Thaimart */
+        :root {
+            --primary-red: #E32321;
+            --primary-navy: #2B348E;
+            --bg-color: #F8F9FA;
+            --text-color: #333333;
+        }
+
+        body {
+            font-family: 'Prompt', sans-serif; /* ใช้ Prompt แทนในกรณีไม่มี Sukhumvit บนเว็บ */
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--primary-navy);
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            color: var(--primary-navy);
+        }
+
+        input[type="text"], select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-family: 'Prompt', sans-serif;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            resize: vertical;
+            height: 100px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 25px;
+            background-color: var(--primary-red);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-family: 'Prompt', sans-serif;
+        }
+
+        button:hover {
+            background-color: #c01b1a;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Loading Overlay */
+        #loading {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-red);
+            border-radius: 50%;
+            width: 40px; height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div id="loading">
+        <div class="spinner"></div>
+        <p id="loading-text" style="margin-top: 15px; font-weight: 600; color: var(--primary-navy);">กำลังโหลดข้อมูล...</p>
+    </div>
+
+    <div class="container">
+        <h2>ระบบแจ้งปัญหา<br>Thaimart Care</h2>
+        
+        <form id="ticketForm">
+            <input type="hidden" id="userId" name="userId">
+            <input type="hidden" id="displayName" name="displayName">
+
+            <label for="userType">คุณคือผู้ใช้งานกลุ่มใด?</label>
+            <select id="userType" name="userType" required onchange="toggleFormFields()">
+                <option value="" disabled selected>-- กรุณาเลือก --</option>
+                <option value="Customer">🛍️ ลูกค้า (Customer)</option>
+                <option value="Seller">🏪 ร้านค้า (Seller)</option>
+            </select>
+
+            <div id="customerFields" class="hidden">
+                <label for="orderId">หมายเลขคำสั่งซื้อ (Order ID)</label>
+                <input type="text" id="orderId" name="orderId" placeholder="เช่น ORD-123456">
+                
+                <label for="customerIssue">ประเภทปัญหา</label>
+                <select id="customerIssue" name="customerIssue">
+                    <option value="" disabled selected>-- เลือกปัญหา --</option>
+                    <option value="สถานะคำสั่งซื้อ/จัดส่ง">สถานะคำสั่งซื้อ และการจัดส่งพัสดุ</option>
+                    <option value="คืนสินค้า/คืนเงิน">คืนสินค้า / คืนเงิน</option>
+                    <option value="สินค้าไม่ถึง/ส่งช้า">สินค้าไม่ถึง / ส่งช้า</option>
+                    <option value="สินค้าไม่ตรงปก">สินค้าไม่ตรงปก / ชำรุด</option>
+                </select>
+            </div>
+
+            <div id="sellerFields" class="hidden">
+                <label for="shopId">รหัสร้านค้า (Shop ID)</label>
+                <input type="text" id="shopId" name="shopId" placeholder="เช่น SHOP-999">
+                
+                <label for="sellerIssue">ประเภทปัญหา</label>
+                <select id="sellerIssue" name="sellerIssue">
+                    <option value="" disabled selected>-- เลือกปัญหา --</option>
+                    <option value="เปลี่ยนแปลงข้อมูลร้านค้า">ขอเปลี่ยนแปลงข้อมูลร้านค้า</option>
+                    <option value="ปัญหาระบบ/การใช้งาน">ปัญหาระบบ / การใช้งาน</option>
+                    <option value="ปัญหาการเงิน/settlement">ปัญหาการเงิน / Settlement</option>
+                    <option value="ปัญหาการจัดส่ง">ปัญหาการจัดส่ง</option>
+                </select>
+            </div>
+
+            <label for="details">รายละเอียดเพิ่มเติม</label>
+            <textarea id="details" name="details" placeholder="อธิบายปัญหาที่คุณพบ..." required></textarea>
+
+            <button type="submit" id="submitBtn">ส่งข้อมูลแจ้งปัญหา</button>
+        </form>
+    </div>
+
+    <script>
+        // ==========================================
+        // ส่วนที่ 1: ตั้งค่า LIFF ID และ Web App URL
+        // ==========================================
+        const LIFF_ID = "2009857349-zkJs4iyH"; 
+        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzbsw54ks2n8MVkn8oa6J56gkZ2nUsJst0xh_LuUUQi7V-TM0I5iqmOUEOG9kiJUZcx/exec"; 
+
+        // ==========================================
+        // ส่วนที่ 2: เริ่มต้นการทำงานของ LIFF
+        // ==========================================
+        async function initializeLiff() {
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                } else {
+                    const profile = await liff.getProfile();
+                    document.getElementById('userId').value = profile.userId;
+                    document.getElementById('displayName').value = profile.displayName;
+                    // ปิดหน้าโหลดดิ้งเมื่อพร้อม
+                    document.getElementById('loading').style.display = 'none';
+                }
+            } catch (err) {
+                console.error("LIFF Initialization failed", err);
+                alert("ไม่สามารถเชื่อมต่อระบบ LINE ได้ กรุณาลองใหม่อีกครั้ง");
+            }
+        }
+
+        initializeLiff();
+
+        // ==========================================
+        // ส่วนที่ 3: สลับฟิลด์ตามประเภทผู้ใช้งาน (UI Logic)
+        // ==========================================
+        function toggleFormFields() {
+            const userType = document.getElementById('userType').value;
+            const customerFields = document.getElementById('customerFields');
+            const sellerFields = document.getElementById('sellerFields');
+
+            if (userType === 'Customer') {
+                customerFields.classList.remove('hidden');
+                sellerFields.classList.add('hidden');
+            } else if (userType === 'Seller') {
+                sellerFields.classList.remove('hidden');
+                customerFields.classList.add('hidden');
+            }
+        }
+
+        // ==========================================
+        // ส่วนที่ 4: จัดการการ Submit ฟอร์ม (ส่ง Data ไป GAS)
+        // ==========================================
+        document.getElementById('ticketForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // ป้องกันการรีเฟรชหน้า
+
+            // เปลี่ยนหน้าจอเป็นสถานะกำลังโหลด
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('loading-text').innerText = 'กำลังส่งข้อมูล...';
+            document.getElementById('submitBtn').disabled = true;
+
+            const userType = document.getElementById('userType').value;
+            
+            // รวบรวมข้อมูลเป็น JSON
+            const payload = {
+                type: 'liff_ticket', // บอก Backend ว่ามาจาก LIFF
+                userId: document.getElementById('userId').value,
+                userType: userType,
+                refId: userType === 'Customer' ? document.getElementById('orderId').value : document.getElementById('shopId').value,
+                issueCategory: userType === 'Customer' ? document.getElementById('customerIssue').value : document.getElementById('sellerIssue').value,
+                details: document.getElementById('details').value
+            };
+
+            // ส่งข้อมูลผ่าน Fetch API ไปยัง Google Apps Script
+            fetch(GAS_WEBAPP_URL, {
+                method: 'POST',
+                // หมายเหตุ: การยิงเข้า GAS Web App จากภายนอก บางครั้งต้องใช้ mode: 'no-cors' เพื่อไม่ให้ติด Error
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(() => {
+                alert("รับเรื่องเรียบร้อยแล้ว ทีมงานจะรีบตรวจสอบและดำเนินการครับ");
+                liff.closeWindow(); // ปิดหน้าต่าง LIFF อัตโนมัติเมื่อส่งเสร็จ
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert("เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่อีกครั้ง");
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>
