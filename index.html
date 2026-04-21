@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thaimart Care - แจ้งปัญหา</title>
+    <title>ระบบแจ้งปัญหา Thaimart Care</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
     
     <style>
-        /* ตั้งค่า CI ของ Thaimart */
         :root {
             --primary-red: #E32321;
             --primary-navy: #2B348E;
@@ -17,7 +16,7 @@
         }
 
         body {
-            font-family: 'Prompt', sans-serif; /* ใช้ Prompt แทนในกรณีไม่มี Sukhumvit บนเว็บ */
+            font-family: 'Prompt', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
@@ -89,7 +88,6 @@
             display: none;
         }
 
-        /* Loading Overlay */
         #loading {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -126,11 +124,11 @@
             <input type="hidden" id="userId" name="userId">
             <input type="hidden" id="displayName" name="displayName">
 
-            <label for="userType">คุณคือผู้ใช้งานกลุ่มใด?</label>
+            <label for="userType">ประเภทผู้ใช้งาน</label>
             <select id="userType" name="userType" required onchange="toggleFormFields()">
                 <option value="" disabled selected>-- กรุณาเลือก --</option>
-                <option value="Customer">🛍️ ลูกค้า (Customer)</option>
-                <option value="Seller">🏪 ร้านค้า (Seller)</option>
+                <option value="Customer">ลูกค้า (Customer)</option>
+                <option value="Seller">ร้านค้า (Seller)</option>
             </select>
 
             <div id="customerFields" class="hidden">
@@ -140,7 +138,7 @@
                 <label for="customerIssue">ประเภทปัญหา</label>
                 <select id="customerIssue" name="customerIssue">
                     <option value="" disabled selected>-- เลือกปัญหา --</option>
-                    <option value="สถานะคำสั่งซื้อ/จัดส่ง">สถานะคำสั่งซื้อ และการจัดส่งพัสดุ</option>
+                    <option value="สถานะคำสั่งซื้อ/จัดส่ง">สถานะคำสั่งซื้อและการจัดส่งพัสดุ</option>
                     <option value="คืนสินค้า/คืนเงิน">คืนสินค้า / คืนเงิน</option>
                     <option value="สินค้าไม่ถึง/ส่งช้า">สินค้าไม่ถึง / ส่งช้า</option>
                     <option value="สินค้าไม่ตรงปก">สินค้าไม่ตรงปก / ชำรุด</option>
@@ -162,22 +160,16 @@
             </div>
 
             <label for="details">รายละเอียดเพิ่มเติม</label>
-            <textarea id="details" name="details" placeholder="อธิบายปัญหาที่คุณพบ..." required></textarea>
+            <textarea id="details" name="details" placeholder="ระบุรายละเอียดปัญหาที่พบ" required></textarea>
 
-            <button type="submit" id="submitBtn">ส่งข้อมูลแจ้งปัญหา</button>
+            <button type="submit" id="submitBtn">ส่งข้อมูล</button>
         </form>
     </div>
 
     <script>
-        // ==========================================
-        // ส่วนที่ 1: ตั้งค่า LIFF ID และ Web App URL
-        // ==========================================
-        const LIFF_ID = "2009857349-zkJs4iyH"; 
-        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxWMfMOLjtABYh0WDy1Vc1uBiBat-js8kIhg682bb9L36PutLJzIMicaOaN0Y_7Anu3/exec"; 
+        const LIFF_ID = "2009857349"; 
+        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwAhJ_o5_5h-FUEE81szEPLBkKPz9B3TwJV2yoZ2OdEfrEAtkWDYCGwDwFiW26qW-L9/exec"; 
 
-        // ==========================================
-        // ส่วนที่ 2: เริ่มต้นการทำงานของ LIFF
-        // ==========================================
         async function initializeLiff() {
             try {
                 await liff.init({ liffId: LIFF_ID });
@@ -187,20 +179,16 @@
                     const profile = await liff.getProfile();
                     document.getElementById('userId').value = profile.userId;
                     document.getElementById('displayName').value = profile.displayName;
-                    // ปิดหน้าโหลดดิ้งเมื่อพร้อม
                     document.getElementById('loading').style.display = 'none';
                 }
             } catch (err) {
                 console.error("LIFF Initialization failed", err);
-                alert("ไม่สามารถเชื่อมต่อระบบ LINE ได้ กรุณาลองใหม่อีกครั้ง");
+                alert("ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่อีกครั้ง");
             }
         }
 
         initializeLiff();
 
-        // ==========================================
-        // ส่วนที่ 3: สลับฟิลด์ตามประเภทผู้ใช้งาน (UI Logic)
-        // ==========================================
         function toggleFormFields() {
             const userType = document.getElementById('userType').value;
             const customerFields = document.getElementById('customerFields');
@@ -215,22 +203,16 @@
             }
         }
 
-        // ==========================================
-        // ส่วนที่ 4: จัดการการ Submit ฟอร์ม (ส่ง Data ไป GAS)
-        // ==========================================
         document.getElementById('ticketForm').addEventListener('submit', function(e) {
-            e.preventDefault(); // ป้องกันการรีเฟรชหน้า
+            e.preventDefault();
 
-            // เปลี่ยนหน้าจอเป็นสถานะกำลังโหลด
             document.getElementById('loading').style.display = 'flex';
-            document.getElementById('loading-text').innerText = 'กำลังส่งข้อมูล...';
+            document.getElementById('loading-text').innerText = 'กำลังประมวลผล...';
             document.getElementById('submitBtn').disabled = true;
 
             const userType = document.getElementById('userType').value;
-            
-            // รวบรวมข้อมูลเป็น JSON
             const payload = {
-                type: 'liff_ticket', // บอก Backend ว่ามาจาก LIFF
+                type: 'liff_ticket',
                 userId: document.getElementById('userId').value,
                 userType: userType,
                 refId: userType === 'Customer' ? document.getElementById('orderId').value : document.getElementById('shopId').value,
@@ -238,19 +220,18 @@
                 details: document.getElementById('details').value
             };
 
-            // ส่งข้อมูลผ่าน Fetch API ไปยัง Google Apps Script
+            // แก้ไข: เปลี่ยน Content-Type เป็น text/plain เพื่อลดปัญหา CORS และการบล็อกใน LIFF
             fetch(GAS_WEBAPP_URL, {
                 method: 'POST',
-                // หมายเหตุ: การยิงเข้า GAS Web App จากภายนอก บางครั้งต้องใช้ mode: 'no-cors' เพื่อไม่ให้ติด Error
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(payload)
             })
-            .then(() => {
-                alert("รับเรื่องเรียบร้อยแล้ว ทีมงานจะรีบตรวจสอบและดำเนินการครับ");
-                liff.closeWindow(); // ปิดหน้าต่าง LIFF อัตโนมัติเมื่อส่งเสร็จ
+            .then(response => response.json())
+            .then(data => {
+                alert("ระบบได้รับข้อมูลแล้ว ทีมงานจะดำเนินการตรวจสอบโดยเร็ว");
+                liff.closeWindow();
             })
-            .catch((error) => {
+            .catch(error => {
                 console.error('Error:', error);
                 alert("เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่อีกครั้ง");
                 document.getElementById('loading').style.display = 'none';
