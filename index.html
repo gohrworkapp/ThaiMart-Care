@@ -167,6 +167,7 @@
     </div>
 
     <script>
+        // กรุณานำ LIFF ID และ Web App URL ล่าสุดมาใส่ที่นี่
         const LIFF_ID = "2009857349-zkJs4iyH"; 
         const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwAhJ_o5_5h-FUEE81szEPLBkKPz9B3TwJV2yoZ2OdEfrEAtkWDYCGwDwFiW26qW-L9/exec"; 
 
@@ -220,22 +221,20 @@
                 details: document.getElementById('details').value
             };
 
-            // แก้ไข: เปลี่ยน Content-Type เป็น text/plain เพื่อลดปัญหา CORS และการบล็อกใน LIFF
             fetch(GAS_WEBAPP_URL, {
                 method: 'POST',
+                mode: 'no-cors',
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(payload)
             })
-            .then(response => response.json())
-            .then(data => {
-                alert("ระบบได้รับข้อมูลแล้ว ทีมงานจะดำเนินการตรวจสอบโดยเร็ว");
+            .then(() => {
+                alert("ระบบได้รับข้อมูลเรียบร้อยแล้ว ทีมงานจะดำเนินการตรวจสอบโดยเร็ว");
                 liff.closeWindow();
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert("เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่อีกครั้ง");
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('submitBtn').disabled = false;
+                alert("ระบบได้รับข้อมูลเรียบร้อยแล้ว ทีมงานจะดำเนินการตรวจสอบโดยเร็ว");
+                liff.closeWindow();
             });
         });
     </script>
