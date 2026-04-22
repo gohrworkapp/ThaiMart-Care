@@ -2,68 +2,90 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบแจ้งปัญหา</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>ระบบแจ้งปัญหา Thaimart Care</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <style>
         :root {
             --primary-red: #E32321;
             --primary-navy: #2B348E;
-            --bg-color: #F8F9FA;
-            --text-color: #333333;
+            --bg-color: #F4F6F8;
+            --form-bg: #FFFFFF;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --border-color: #D1D5DB;
         }
 
         body {
             font-family: 'Prompt', sans-serif;
             background-color: var(--bg-color);
-            color: var(--text-color);
+            color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            padding: 16px;
+            -webkit-font-smoothing: antialiased;
         }
 
         .container {
-            max-width: 400px;
+            max-width: 100%;
             margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            background: var(--form-bg);
+            padding: 24px 20px;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
         }
 
         h2 {
             text-align: center;
             color: var(--primary-navy);
-            margin-bottom: 20px;
+            margin-top: 0;
+            margin-bottom: 24px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
         }
 
         label {
-            font-weight: 600;
+            font-weight: 500;
             display: block;
-            margin-top: 15px;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             color: var(--primary-navy);
+            font-size: 14px;
         }
 
+        /* บังคับ font-size 16px ป้องกัน iOS Zoom */
         input[type="text"], select, textarea {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
+            padding: 12px;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             font-family: 'Prompt', sans-serif;
+            font-size: 16px; 
             box-sizing: border-box;
+            background-color: #FAFAFA;
+            color: var(--text-main);
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-navy);
+            background-color: #FFFFFF;
         }
 
         textarea {
             resize: vertical;
-            height: 100px;
+            min-height: 100px;
         }
 
         button {
             width: 100%;
-            padding: 12px;
-            margin-top: 25px;
+            padding: 14px;
+            margin-top: 16px;
             background-color: var(--primary-red);
             color: white;
             border: none;
@@ -71,101 +93,98 @@
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.3s;
             font-family: 'Prompt', sans-serif;
+            box-shadow: 0 4px 6px rgba(227, 35, 33, 0.2);
+            transition: opacity 0.2s;
         }
 
-        button:hover {
-            background-color: #c01b1a;
+        button:active {
+            opacity: 0.8;
         }
 
         button:disabled {
             background-color: #cccccc;
+            box-shadow: none;
             cursor: not-allowed;
+            color: #666666;
         }
 
         .hidden {
             display: none;
         }
 
-        #loading {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.9);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
+        #statusText {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 16px;
         }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary-red);
-            border-radius: 50%;
-            width: 40px; height: 40px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div id="loading">
-        <div class="spinner"></div>
-        <p id="loading-text" style="margin-top: 15px; font-weight: 600; color: var(--primary-navy);">กำลังเตรียมข้อมูล...</p>
-    </div>
-
     <div class="container">
-        <h2 id="formTitle">ระบบแจ้งปัญหา</h2>
+        <h2 id="formTitle">ระบบรับแจ้งปัญหา</h2>
         
         <form id="ticketForm">
             <input type="hidden" id="userId" name="userId">
 
             <div id="customerFields" class="hidden">
-                <label for="orderId">หมายเลขคำสั่งซื้อ (Order ID)</label>
-                <input type="text" id="orderId" name="orderId" placeholder="ตัวอย่าง ORD-123456">
+                <div class="form-group">
+                    <label for="orderId">หมายเลขคำสั่งซื้อ (Order ID)</label>
+                    <input type="text" id="orderId" name="orderId" placeholder="ระบุหมายเลขคำสั่งซื้อ เช่น ORD-123456">
+                </div>
                 
-                <label for="customerIssue">ประเภทปัญหา</label>
-                <select id="customerIssue" name="customerIssue">
-                    <option value="" disabled selected>-- เลือกประเภทปัญหา --</option>
-                </select>
+                <div class="form-group">
+                    <label for="customerIssue">ประเภทปัญหา</label>
+                    <select id="customerIssue" name="customerIssue" onchange="updateDynamicFields('Customer')">
+                        <option value="" disabled selected>-- กรุณาเลือกประเภทปัญหา --</option>
+                    </select>
+                </div>
             </div>
 
             <div id="sellerFields" class="hidden">
-                <label for="shopId">รหัสร้านค้า (Shop ID)</label>
-                <input type="text" id="shopId" name="shopId" placeholder="ตัวอย่าง SHOP-999">
+                <div class="form-group">
+                    <label for="shopId">รหัสร้านค้า (Shop ID)</label>
+                    <input type="text" id="shopId" name="shopId" placeholder="ระบุรหัสร้านค้า เช่น SHOP-999">
+                </div>
                 
-                <label for="sellerIssue">ประเภทปัญหา</label>
-                <select id="sellerIssue" name="sellerIssue">
-                    <option value="" disabled selected>-- เลือกประเภทปัญหา --</option>
-                </select>
+                <div class="form-group">
+                    <label for="sellerIssue">ประเภทปัญหา</label>
+                    <select id="sellerIssue" name="sellerIssue" onchange="updateDynamicFields('Seller')">
+                        <option value="" disabled selected>-- กรุณาเลือกประเภทปัญหา --</option>
+                    </select>
+                </div>
             </div>
 
-            <label for="details">รายละเอียดเพิ่มเติม</label>
-            <textarea id="details" name="details" placeholder="ระบุรายละเอียดปัญหาที่พบอย่างครบถ้วน" required></textarea>
+            <div class="form-group">
+                <label id="detailsLabel" for="details">รายละเอียดเพิ่มเติม</label>
+                <textarea id="details" name="details" placeholder="ระบุรายละเอียดปัญหาที่ท่านพบ" required></textarea>
+            </div>
 
-            <button type="submit" id="submitBtn">ส่งข้อมูล</button>
+            <button type="submit" id="submitBtn" disabled>กำลังเชื่อมต่อระบบ...</button>
         </form>
+
+        <div id="statusText">กำลังเตรียมความพร้อมของฟอร์ม...</div>
     </div>
 
     <script>
         // กรุณาระบุข้อมูลให้ตรงกับระบบของคุณ
         const LIFF_ID = "2009857349-zkJs4iyH"; 
-        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbx_XTZY6N08RehOSg9Zk94CJucB83IJk3pOUORD9Wclx5kWl0yIPc40VJdI88rXKRJf/exec"; 
+        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbz2iJ1W0-MOPj_Cu2_db7Mi4W4x6e1X08uJI07aXR6HzpktSfnhxk4fzGpIagYpIcxe/exec"; 
         let currentRole = "";
 
         async function initialize() {
             try {
-                // 1. โหลดข้อมูลตัวเลือก (Config) จาก Google Sheets
-                const response = await fetch(GAS_WEBAPP_URL);
-                const configData = await response.json();
-                
-                populateSelect('customerIssue', configData.customerIssues);
-                populateSelect('sellerIssue', configData.sellerIssues);
+                // โหลด Config จาก Sheets แบบ Background
+                fetch(GAS_WEBAPP_URL)
+                    .then(response => response.json())
+                    .then(configData => {
+                        populateSelect('customerIssue', configData.customerIssues);
+                        populateSelect('sellerIssue', configData.sellerIssues);
+                    });
 
-                // 2. เริ่มต้นระบบ LIFF
+                // เริ่มต้น LIFF
                 await liff.init({ liffId: LIFF_ID });
                 if (!liff.isLoggedIn()) {
                     liff.login();
@@ -180,11 +199,10 @@
                 }
             } catch (err) {
                 console.error(err);
-                alert("เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่อีกครั้ง");
+                document.getElementById('statusText').innerText = "เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาเปิดใหม่อีกครั้ง";
             }
         }
 
-        // ฟังก์ชันสำหรับนำข้อมูลใส่ใน Dropdown
         function populateSelect(elementId, optionsArray) {
             const selectElement = document.getElementById(elementId);
             optionsArray.forEach(optionText => {
@@ -195,7 +213,6 @@
             });
         }
 
-        // ฟังก์ชันสำหรับกำหนดการแสดงผลฟอร์มตามประเภทผู้ใช้งาน
         function setupFormByRole(role) {
             if (role === 'Customer') {
                 document.getElementById('formTitle').innerText = "แจ้งปัญหาการสั่งซื้อ";
@@ -206,21 +223,52 @@
                 document.getElementById('sellerFields').classList.remove('hidden');
                 document.getElementById('sellerIssue').required = true;
             } else {
-                alert("สิทธิ์การเข้าถึงไม่ถูกต้อง กรุณาเข้าสู่ระบบผ่านเมนูใน LINE อีกครั้ง");
-                liff.closeWindow();
+                document.getElementById('statusText').innerText = "สิทธิ์การเข้าถึงไม่ถูกต้อง";
                 return;
             }
-            // ซ่อนหน้าจอ Loading เมื่อระบบเตรียมฟอร์มเสร็จสิ้น
-            document.getElementById('loading').style.display = 'none';
+            
+            // เปิดให้กดปุ่มส่งข้อมูลได้เมื่อโหลดเสร็จ
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = false;
+            submitBtn.innerText = "ส่งข้อมูลแจ้งปัญหา";
+            document.getElementById('statusText').innerText = "";
         }
 
-        // จัดการเมื่อผู้ใช้งานกดปุ่มส่งข้อมูล
+        // ระบบ Dynamic Fields เปลี่ยนข้อความตามตัวเลือก
+        function updateDynamicFields(role) {
+            const detailsLabel = document.getElementById('detailsLabel');
+            const detailsInput = document.getElementById('details');
+            let selectedValue = "";
+
+            if (role === 'Customer') {
+                selectedValue = document.getElementById('customerIssue').value;
+            } else {
+                selectedValue = document.getElementById('sellerIssue').value;
+            }
+
+            // ตั้งค่าเงื่อนไขข้อความตามตัวเลือก
+            if (selectedValue.includes("คืนสินค้า") || selectedValue.includes("คืนเงิน")) {
+                detailsLabel.innerText = "เหตุผลการขอคืนสินค้า/คืนเงิน";
+                detailsInput.placeholder = "ระบุเหตุผล เช่น สินค้าชำรุด, ได้รับสินค้าผิดประเภท";
+            } else if (selectedValue.includes("ไม่ตรงปก") || selectedValue.includes("ชำรุด")) {
+                detailsLabel.innerText = "อธิบายจุดที่สินค้าชำรุดหรือไม่ตรงปก";
+                detailsInput.placeholder = "อธิบายรายละเอียด (ท่านสามารถส่งรูปภาพเพิ่มเติมในแชทได้หลังจากส่งฟอร์มนี้)";
+            } else if (selectedValue.includes("เปลี่ยนแปลงข้อมูล")) {
+                detailsLabel.innerText = "ข้อมูลที่ต้องการเปลี่ยนแปลง";
+                detailsInput.placeholder = "ระบุข้อมูลเดิม และข้อมูลใหม่ที่ต้องการแก้ไข";
+            } else {
+                detailsLabel.innerText = "รายละเอียดเพิ่มเติม";
+                detailsInput.placeholder = "ระบุรายละเอียดปัญหาที่ท่านพบ";
+            }
+        }
+
         document.getElementById('ticketForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            document.getElementById('loading').style.display = 'flex';
-            document.getElementById('loading-text').innerText = 'กำลังประมวลผล...';
-            document.getElementById('submitBtn').disabled = true;
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = "กำลังดำเนินการ...";
+            document.getElementById('statusText').innerText = "กรุณารอสักครู่ ระบบกำลังบันทึกข้อมูล";
 
             const payload = {
                 type: 'liff_ticket',
@@ -238,18 +286,16 @@
                 body: JSON.stringify(payload)
             })
             .then(() => {
-                alert("ระบบได้รับข้อมูลเรียบร้อยแล้ว กรุณาตรวจสอบในแชท");
+                alert("รับเรื่องเรียบร้อยแล้ว กรุณาตรวจสอบรายละเอียดในแชทครับ");
                 liff.closeWindow();
             })
             .catch(error => {
-                console.error('Error:', error);
-                alert("ระบบประมวลผลเสร็จสิ้น กรุณาตรวจสอบในแชท");
+                alert("ดำเนินการเสร็จสิ้น กรุณาตรวจสอบในแชทครับ");
                 liff.closeWindow();
             });
         });
 
-        // เริ่มต้นการทำงานเมื่อหน้าเว็บโหลดเสร็จ
-        initialize();
+        window.onload = initialize;
     </script>
 </body>
 </html>
