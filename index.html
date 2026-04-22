@@ -114,30 +114,22 @@
 
     <div id="loading">
         <div class="spinner"></div>
-        <p id="loading-text" style="margin-top: 15px; font-weight: 600; color: var(--primary-navy);">กำลังโหลดข้อมูล...</p>
+        <p id="loading-text" style="margin-top: 15px; font-weight: 600; color: var(--primary-navy);">กำลังเตรียมข้อมูล...</p>
     </div>
 
     <div class="container">
-        <h2>ระบบแจ้งปัญหา<br>Thaimart Care</h2>
+        <h2 id="formTitle">ระบบแจ้งปัญหา</h2>
         
         <form id="ticketForm">
             <input type="hidden" id="userId" name="userId">
-            <input type="hidden" id="displayName" name="displayName">
-
-            <label for="userType">ประเภทผู้ใช้งาน</label>
-            <select id="userType" name="userType" required onchange="toggleFormFields()">
-                <option value="" disabled selected>-- กรุณาเลือก --</option>
-                <option value="Customer">ลูกค้า (Customer)</option>
-                <option value="Seller">ร้านค้า (Seller)</option>
-            </select>
 
             <div id="customerFields" class="hidden">
                 <label for="orderId">หมายเลขคำสั่งซื้อ (Order ID)</label>
-                <input type="text" id="orderId" name="orderId" placeholder="เช่น ORD-123456">
+                <input type="text" id="orderId" name="orderId" placeholder="ตัวอย่าง ORD-123456">
                 
                 <label for="customerIssue">ประเภทปัญหา</label>
                 <select id="customerIssue" name="customerIssue">
-                    <option value="" disabled selected>-- เลือกปัญหา --</option>
+                    <option value="" disabled selected>-- เลือกประเภทปัญหา --</option>
                     <option value="สถานะคำสั่งซื้อ/จัดส่ง">สถานะคำสั่งซื้อและการจัดส่งพัสดุ</option>
                     <option value="คืนสินค้า/คืนเงิน">คืนสินค้า / คืนเงิน</option>
                     <option value="สินค้าไม่ถึง/ส่งช้า">สินค้าไม่ถึง / ส่งช้า</option>
@@ -147,11 +139,11 @@
 
             <div id="sellerFields" class="hidden">
                 <label for="shopId">รหัสร้านค้า (Shop ID)</label>
-                <input type="text" id="shopId" name="shopId" placeholder="เช่น SHOP-999">
+                <input type="text" id="shopId" name="shopId" placeholder="ตัวอย่าง SHOP-999">
                 
                 <label for="sellerIssue">ประเภทปัญหา</label>
                 <select id="sellerIssue" name="sellerIssue">
-                    <option value="" disabled selected>-- เลือกปัญหา --</option>
+                    <option value="" disabled selected>-- เลือกประเภทปัญหา --</option>
                     <option value="เปลี่ยนแปลงข้อมูลร้านค้า">ขอเปลี่ยนแปลงข้อมูลร้านค้า</option>
                     <option value="ปัญหาระบบ/การใช้งาน">ปัญหาระบบ / การใช้งาน</option>
                     <option value="ปัญหาการเงิน/settlement">ปัญหาการเงิน / Settlement</option>
@@ -160,16 +152,17 @@
             </div>
 
             <label for="details">รายละเอียดเพิ่มเติม</label>
-            <textarea id="details" name="details" placeholder="ระบุรายละเอียดปัญหาที่พบ" required></textarea>
+            <textarea id="details" name="details" placeholder="ระบุรายละเอียดปัญหาที่พบอย่างครบถ้วน" required></textarea>
 
             <button type="submit" id="submitBtn">ส่งข้อมูล</button>
         </form>
     </div>
 
     <script>
-        // กรุณานำ LIFF ID และ Web App URL ล่าสุดมาใส่ที่นี่
+        // กรุณานำ LIFF ID และ Web App URL ล่าสุดมาใส่
         const LIFF_ID = "2009857349-zkJs4iyH"; 
-        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwAhJ_o5_5h-FUEE81szEPLBkKPz9B3TwJV2yoZ2OdEfrEAtkWDYCGwDwFiW26qW-L9/exec"; 
+        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwu91RBjEAGJT5updMurDdMfVjNRbnNlZTS8W0MngP8EHIwtDtKlhUXWMw4upw8HQM_/exec"; 
+        let currentRole = "";
 
         async function initializeLiff() {
             try {
@@ -179,8 +172,12 @@
                 } else {
                     const profile = await liff.getProfile();
                     document.getElementById('userId').value = profile.userId;
-                    document.getElementById('displayName').value = profile.displayName;
-                    document.getElementById('loading').style.display = 'none';
+
+                    // ดึง Role จาก URL Parameter ที่แชทบอทส่งมา
+                    const urlParams = new URLSearchParams(window.location.search);
+                    currentRole = urlParams.get('role');
+
+                    setupFormByRole(currentRole);
                 }
             } catch (err) {
                 console.error("LIFF Initialization failed", err);
@@ -188,21 +185,22 @@
             }
         }
 
-        initializeLiff();
-
-        function toggleFormFields() {
-            const userType = document.getElementById('userType').value;
-            const customerFields = document.getElementById('customerFields');
-            const sellerFields = document.getElementById('sellerFields');
-
-            if (userType === 'Customer') {
-                customerFields.classList.remove('hidden');
-                sellerFields.classList.add('hidden');
-            } else if (userType === 'Seller') {
-                sellerFields.classList.remove('hidden');
-                customerFields.classList.add('hidden');
+        function setupFormByRole(role) {
+            if (role === 'Customer') {
+                document.getElementById('formTitle').innerText = "แจ้งปัญหาการสั่งซื้อ";
+                document.getElementById('customerFields').classList.remove('hidden');
+            } else if (role === 'Seller') {
+                document.getElementById('formTitle').innerText = "แจ้งปัญหาร้านค้า";
+                document.getElementById('sellerFields').classList.remove('hidden');
+            } else {
+                alert("เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์ กรุณาเข้าสู่ระบบผ่านเมนูใน LINE อีกครั้ง");
+                liff.closeWindow();
+                return;
             }
+            document.getElementById('loading').style.display = 'none';
         }
+
+        initializeLiff();
 
         document.getElementById('ticketForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -211,13 +209,12 @@
             document.getElementById('loading-text').innerText = 'กำลังประมวลผล...';
             document.getElementById('submitBtn').disabled = true;
 
-            const userType = document.getElementById('userType').value;
             const payload = {
                 type: 'liff_ticket',
                 userId: document.getElementById('userId').value,
-                userType: userType,
-                refId: userType === 'Customer' ? document.getElementById('orderId').value : document.getElementById('shopId').value,
-                issueCategory: userType === 'Customer' ? document.getElementById('customerIssue').value : document.getElementById('sellerIssue').value,
+                userType: currentRole,
+                refId: currentRole === 'Customer' ? document.getElementById('orderId').value : document.getElementById('shopId').value,
+                issueCategory: currentRole === 'Customer' ? document.getElementById('customerIssue').value : document.getElementById('sellerIssue').value,
                 details: document.getElementById('details').value
             };
 
