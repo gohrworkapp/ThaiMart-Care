@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบแจ้งปัญหา Thaimart Care</title>
+    <title>ระบบแจ้งปัญหา</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
     
@@ -130,10 +130,6 @@
                 <label for="customerIssue">ประเภทปัญหา</label>
                 <select id="customerIssue" name="customerIssue">
                     <option value="" disabled selected>-- เลือกประเภทปัญหา --</option>
-                    <option value="สถานะคำสั่งซื้อ/จัดส่ง">สถานะคำสั่งซื้อและการจัดส่งพัสดุ</option>
-                    <option value="คืนสินค้า/คืนเงิน">คืนสินค้า / คืนเงิน</option>
-                    <option value="สินค้าไม่ถึง/ส่งช้า">สินค้าไม่ถึง / ส่งช้า</option>
-                    <option value="สินค้าไม่ตรงปก">สินค้าไม่ตรงปก / ชำรุด</option>
                 </select>
             </div>
 
@@ -144,10 +140,6 @@
                 <label for="sellerIssue">ประเภทปัญหา</label>
                 <select id="sellerIssue" name="sellerIssue">
                     <option value="" disabled selected>-- เลือกประเภทปัญหา --</option>
-                    <option value="เปลี่ยนแปลงข้อมูลร้านค้า">ขอเปลี่ยนแปลงข้อมูลร้านค้า</option>
-                    <option value="ปัญหาระบบ/การใช้งาน">ปัญหาระบบ / การใช้งาน</option>
-                    <option value="ปัญหาการเงิน/settlement">ปัญหาการเงิน / Settlement</option>
-                    <option value="ปัญหาการจัดส่ง">ปัญหาการจัดส่ง</option>
                 </select>
             </div>
 
@@ -159,13 +151,21 @@
     </div>
 
     <script>
-        // กรุณานำ LIFF ID และ Web App URL ล่าสุดมาใส่
+        // กรุณาระบุข้อมูลให้ตรงกับระบบของคุณ
         const LIFF_ID = "2009857349-zkJs4iyH"; 
-        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzY7JH0VKsQqpKRiOJ-Y0Ti50I5NjF3SwOrUcjDMQ8mYN8o1DSMcEh63TozORpozS8T/exec"; 
+        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbx_XTZY6N08RehOSg9Zk94CJucB83IJk3pOUORD9Wclx5kWl0yIPc40VJdI88rXKRJf/exec"; 
         let currentRole = "";
 
-        async function initializeLiff() {
+        async function initialize() {
             try {
+                // 1. โหลดข้อมูลตัวเลือก (Config) จาก Google Sheets
+                const response = await fetch(GAS_WEBAPP_URL);
+                const configData = await response.json();
+                
+                populateSelect('customerIssue', configData.customerIssues);
+                populateSelect('sellerIssue', configData.sellerIssues);
+
+                // 2. เริ่มต้นระบบ LIFF
                 await liff.init({ liffId: LIFF_ID });
                 if (!liff.isLoggedIn()) {
                     liff.login();
@@ -173,38 +173,51 @@
                     const profile = await liff.getProfile();
                     document.getElementById('userId').value = profile.userId;
 
-                    // ดึง Role จาก URL Parameter ที่แชทบอทส่งมา
                     const urlParams = new URLSearchParams(window.location.search);
                     currentRole = urlParams.get('role');
 
                     setupFormByRole(currentRole);
                 }
             } catch (err) {
-                console.error("LIFF Initialization failed", err);
-                alert("ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่อีกครั้ง");
+                console.error(err);
+                alert("เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่อีกครั้ง");
             }
         }
 
+        // ฟังก์ชันสำหรับนำข้อมูลใส่ใน Dropdown
+        function populateSelect(elementId, optionsArray) {
+            const selectElement = document.getElementById(elementId);
+            optionsArray.forEach(optionText => {
+                const opt = document.createElement('option');
+                opt.value = optionText;
+                opt.innerHTML = optionText;
+                selectElement.appendChild(opt);
+            });
+        }
+
+        // ฟังก์ชันสำหรับกำหนดการแสดงผลฟอร์มตามประเภทผู้ใช้งาน
         function setupFormByRole(role) {
             if (role === 'Customer') {
                 document.getElementById('formTitle').innerText = "แจ้งปัญหาการสั่งซื้อ";
                 document.getElementById('customerFields').classList.remove('hidden');
+                document.getElementById('customerIssue').required = true;
             } else if (role === 'Seller') {
                 document.getElementById('formTitle').innerText = "แจ้งปัญหาร้านค้า";
                 document.getElementById('sellerFields').classList.remove('hidden');
+                document.getElementById('sellerIssue').required = true;
             } else {
-                alert("เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์ กรุณาเข้าสู่ระบบผ่านเมนูใน LINE อีกครั้ง");
+                alert("สิทธิ์การเข้าถึงไม่ถูกต้อง กรุณาเข้าสู่ระบบผ่านเมนูใน LINE อีกครั้ง");
                 liff.closeWindow();
                 return;
             }
+            // ซ่อนหน้าจอ Loading เมื่อระบบเตรียมฟอร์มเสร็จสิ้น
             document.getElementById('loading').style.display = 'none';
         }
 
-        initializeLiff();
-
+        // จัดการเมื่อผู้ใช้งานกดปุ่มส่งข้อมูล
         document.getElementById('ticketForm').addEventListener('submit', function(e) {
             e.preventDefault();
-
+            
             document.getElementById('loading').style.display = 'flex';
             document.getElementById('loading-text').innerText = 'กำลังประมวลผล...';
             document.getElementById('submitBtn').disabled = true;
@@ -225,15 +238,18 @@
                 body: JSON.stringify(payload)
             })
             .then(() => {
-                alert("ระบบได้รับข้อมูลเรียบร้อยแล้ว ทีมงานจะดำเนินการตรวจสอบโดยเร็ว");
+                alert("ระบบได้รับข้อมูลเรียบร้อยแล้ว กรุณาตรวจสอบในแชท");
                 liff.closeWindow();
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert("ระบบได้รับข้อมูลเรียบร้อยแล้ว ทีมงานจะดำเนินการตรวจสอบโดยเร็ว");
+                alert("ระบบประมวลผลเสร็จสิ้น กรุณาตรวจสอบในแชท");
                 liff.closeWindow();
             });
         });
+
+        // เริ่มต้นการทำงานเมื่อหน้าเว็บโหลดเสร็จ
+        initialize();
     </script>
 </body>
 </html>
